@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لعبة سيوة</title>
+
+<style>
+body{
+font-family:'Cairo',sans-serif;
+background: linear-gradient(135deg,#2c1a0b,#8b5e34,#d4af37);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+color:white;
+}
+
+.container{
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(10px);
+padding:25px;
+border-radius:20px;
+width:400px;
+text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+
+h1{color:#ffd700;}
+
+button{
+width:100%;
+padding:12px;
+margin:8px 0;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-size:16px;
+transition:.3s;
+}
+
+button:hover{transform:scale(1.05);}
+
+.correct{background:#00c853;color:white;}
+.wrong{background:#d50000;color:white;}
+
+.progress{
+height:10px;
+background:rgba(255,255,255,0.2);
+border-radius:10px;
+margin:10px 0;
+}
+
+.bar{
+height:100%;
+background:#00ffcc;
+width:0%;
+border-radius:10px;
+transition:.3s;
+}
+
+#end{display:none;color:#ffd700;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>🏺 لعبة سيوة</h1>
+<h3 id="level"></h3>
+<h4 id="score"></h4>
+
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<p id="question"></p>
+<div id="answers"></div>
+
+<h2 id="end">🎉 تهانينا! كسبت 🎉</h2>
+</div>
+
+<audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+<audio id="wrongSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+
+<script>
+
+let level=1;
+let score=0;
+let currentQuestion=0;
+
+// shuffle
+function shuffle(arr){return arr.sort(()=>Math.random()-0.5);}
+
+// 15 levels × 3 questions
+const questions=[
+
+[{q:"واحة سيوة فين؟",a:["مصر","تونس","الجزائر"],c:"مصر"},
+{q:"سيوة مشهورة بإيه؟",a:["التمور","الثلج","الأنهار"],c:"التمور"},
+{q:"النخيل بيطلع؟",a:["تمر","تفاح","موز"],c:"تمر"}],
+
+[{q:"معبد آمون زاره مين؟",a:["الإسكندر الأكبر","نابليون","قيصر"],c:"الإسكندر الأكبر"},
+{q:"سيوة تبع؟",a:["مطروح","القاهرة","أسوان"],c:"مطروح"},
+{q:"التمر مصدر؟",a:["طاقة","مياه","دهون"],c:"طاقة"}],
+
+[{q:"الفخار من؟",a:["طين","حديد","خشب"],c:"طين"},
+{q:"لغة سيوة؟",a:["أمازيغية","فرنسية","إنجليزية"],c:"أمازيغية"},
+{q:"السياحة في سيوة تعتمد على؟",a:["الطبيعة","المصانع","الموانئ"],c:"الطبيعة"}],
+
+[{q:"العيون تستخدم في؟",a:["الاستشفاء","الصناعة","التجارة"],c:"الاستشفاء"},
+{q:"النخيل يحتاج؟",a:["شمس ومياه","ثلج","ظلام"],c:"شمس ومياه"},
+{q:"السعف يعمل منه؟",a:["سلال","زجاج","موبايل"],c:"سلال"}],
+
+[{q:"الجريد جزء من؟",a:["النخلة","الزهور","الشجر"],c:"النخلة"},
+{q:"الفخار بعد الحرق؟",a:["صلب","سائل","لين"],c:"صلب"},
+{q:"التطريز؟",a:["تزيين القماش","طبخ","بناء"],c:"تزيين القماش"}],
+
+[{q:"سيوة قريبة من؟",a:["ليبيا","السودان","الهند"],c:"ليبيا"},
+{q:"السياحة البيئية؟",a:["حماية الطبيعة","التلوث","الصناعة"],c:"حماية الطبيعة"},
+{q:"التمر غني؟",a:["سكر طبيعي","غاز","حديد"],c:"سكر طبيعي"}],
+
+[{q:"الخزاف يستخدم؟",a:["عجلة الفخار","سيف","حاسوب"],c:"عجلة الفخار"},
+{q:"النخيل يعيش في؟",a:["الصحراء","الثلج","المحيط"],c:"الصحراء"},
+{q:"السياح يزورون سيوة؟",a:["الهدوء","الضوضاء","الزحام"],c:"الهدوء"}],
+
+[{q:"السعف بعد تجفيفه؟",a:["صلب","سائل","لين"],c:"صلب"},
+{q:"الجريد يستخدم في؟",a:["بناء","طيران","برمجة"],c:"بناء"},
+{q:"السياحة الثقافية؟",a:["التراث","المصانع","التسوق"],c:"التراث"}],
+
+[{q:"الفخار يستخدم؟",a:["أواني","سيارات","موبايل"],c:"أواني"},
+{q:"سيوة فيها؟",a:["بحيرات ملحية","أنهار","جليد"],c:"بحيرات ملحية"},
+{q:"التمر يتحول إلى؟",a:["عجوة","حديد","زجاج"],c:"عجوة"}],
+
+[{q:"السياحة؟",a:["سفر للترفيه","عمل","دراسة"],c:"سفر للترفيه"},
+{q:"النخيل رمز؟",a:["الخير","الخطر","الشر"],c:"الخير"},
+{q:"الحرف اليدوية؟",a:["تراث","تكنولوجيا","صناعة"],c:"تراث"}],
+
+[{q:"معبد في سيوة؟",a:["آمون","زيوس","أبولو"],c:"آمون"},
+{q:"السياحة العلاجية؟",a:["علاج بالمياه","تجارة","رياضة"],c:"علاج بالمياه"},
+{q:"الطين يحتاج؟",a:["مياه","هواء","نار فقط"],c:"مياه"}],
+
+[{q:"الملابس المطرزة؟",a:["تراث","عادية","صناعية"],c:"تراث"},
+{q:"بيئة سيوة؟",a:["صحراوية","جبلية","بحرية"],c:"صحراوية"},
+{q:"التمر فيه؟",a:["ألياف","غاز","بلاستيك"],c:"ألياف"}],
+
+[{q:"السياحة الداخلية؟",a:["داخل البلد","خارجها","دولية"],c:"داخل البلد"},
+{q:"الخزف يحتاج حرارة؟",a:["نعم","لا","نادراً"],c:"نعم"},
+{q:"السعف يستخدم في؟",a:["حصير","حديد","زجاج"],c:"حصير"}],
+
+[{q:"الجريد مفيد في؟",a:["زراعة","فضاء","كهرباء"],c:"زراعة"},
+{q:"سيوة مقصد؟",a:["سياحي","صناعي","تجاري"],c:"سياحي"},
+{q:"التطريز يدل؟",a:["أصالة","حداثة","سرعة"],c:"أصالة"}],
+
+[{q:"السياحة العالمية؟",a:["بين الدول","محلية","داخلية"],c:"بين الدول"},
+{q:"النخيل يعطي؟",a:["ظل وغذاء","حديد","زجاج"],c:"ظل وغذاء"},
+{q:"الخزف فن؟",a:["قديم","حديث فقط","رقمي"],c:"قديم"}]
+
+];
+
+function load(){
+if(level>questions.length){
+document.getElementById("question").innerHTML="";
+document.getElementById("answers").innerHTML="";
+document.getElementById("end").style.display="block";
+return;
+}
+
+let q=questions[level-1][currentQuestion];
+
+document.getElementById("level").innerText="Level "+level;
+document.getElementById("score").innerText="Score: "+score;
+document.getElementById("question").innerText=q.q;
+
+document.getElementById("bar").style.width=(level/questions.length)*100+"%";
+
+let shuffled=shuffle([...q.a]);
+
+let div=document.getElementById("answers");
+div.innerHTML="";
+
+shuffled.forEach(ans=>{
+let btn=document.createElement("button");
+btn.innerText=ans;
+btn.onclick=()=>check(ans,q.c);
+div.appendChild(btn);
+});
+}
+
+function check(selected,correct){
+let buttons=document.querySelectorAll("button");
+
+buttons.forEach(btn=>{
+btn.disabled=true;
+if(btn.innerText===correct) btn.classList.add("correct");
+else btn.classList.add("wrong");
+});
+
+if(selected===correct){
+score++;
+document.getElementById("correctSound").play();
+}else{
+document.getElementById("wrongSound").play();
+}
+
+setTimeout(()=>{
+currentQuestion++;
+if(currentQuestion>=3){
+level++;
+currentQuestion=0;
+}
+load();
+},1000);
+}
+
+load();
+
+</script>
+
+</body>
+</html>
